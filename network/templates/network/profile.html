@@ -1,63 +1,68 @@
 {% extends "network/layout.html" %}
+{% load static %}
 
 {% block title %}{{ profile_user.username }} - Social Network{% endblock %}
 
 {% block body %}
-    <div class="container mt-4">
-        <div class="card mb-4">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h2 class="mb-0">{{ profile_user.username }}</h2>
-                        <p class="text-muted mb-0">
-                            <strong><span class="follower-count-value">{{ follower_count }}</span></strong> followers • 
-                            <strong>{{ following_count }}</strong> following
-                        </p>
+    <div class="container-fluid mt-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h2 class="mb-0">{{ profile_user.username }}</h2>
+                                <p class="text-muted mb-0">
+                                    <strong><span class="follower-count-value">{{ follower_count }}</span></strong> followers • 
+                                    <strong>{{ following_count }}</strong> following
+                                </p>
+                            </div>
+                            
+                            {% if user.is_authenticated and not is_own_profile %}
+                                <button class="btn follow-btn {% if is_following %}btn-outline-primary{% else %}btn-primary{% endif %}" 
+                                        data-username="{{ profile_user.username }}">
+                                    <span class="follow-text">{% if is_following %}Unfollow{% else %}Follow{% endif %}</span>
+                                </button>
+                            {% endif %}
+                        </div>
                     </div>
-                    
-                    {% if user.is_authenticated and not is_own_profile %}
-                        <button class="btn follow-btn {% if is_following %}btn-outline-primary{% else %}btn-primary{% endif %}" 
-                                data-username="{{ profile_user.username }}">
-                            <span class="follow-text">{% if is_following %}Unfollow{% else %}Follow{% endif %}</span>
-                        </button>
-                    {% endif %}
                 </div>
+                
+                <h3>Posts by {{ profile_user.username }}</h3>
+                
+                {% if page_obj %}
+                    {% for post in page_obj %}
+                        {% include "network/_post.html" with post=post %}
+                    {% empty %}
+                        <div class="alert alert-info">
+                            This user hasn't posted anything yet.
+                        </div>
+                    {% endfor %}
+                    
+                    {% if page_obj.has_other_pages %}
+                        <nav aria-label="Posts pagination">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                                    </li>
+                                {% endif %}
+                                
+                                <li class="page-item active">
+                                    <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                                </li>
+                                
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    {% endif %}
+                {% endif %}
             </div>
         </div>
-        
-        <h3>Posts by {{ profile_user.username }}</h3>
-        
-        {% if page_obj %}
-            {% for post in page_obj %}
-                {% include "network/_post.html" with post=post %}
-            {% empty %}
-                <div class="alert alert-info">
-                    This user hasn't posted anything yet.
-                </div>
-            {% endfor %}
-            
-            {% if page_obj.has_other_pages %}
-                <nav aria-label="Posts pagination">
-                    <ul class="pagination justify-content-center">
-                        {% if page_obj.has_previous %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
-                            </li>
-                        {% endif %}
-                        
-                        <li class="page-item active">
-                            <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-                        </li>
-                        
-                        {% if page_obj.has_next %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
-                            </li>
-                        {% endif %}
-                    </ul>
-                </nav>
-            {% endif %}
-        {% endif %}
     </div>
 
     {% block javascript %}

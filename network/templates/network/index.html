@@ -4,55 +4,59 @@
 {% block title %}{{ page_title|default:"All Posts" }} - Social Network{% endblock %}
 
 {% block body %}
-    <div class="container mt-4">
-        <h1>{{ page_title|default:"All Posts" }}</h1>
-        
-        {% if user.is_authenticated and page_title == "All Posts" %}
-            <div class="card mb-4">
-                <div class="card-body">
-                    <h5 class="card-title">New Post</h5>
-                    <form action="{% url 'create_post' %}" method="post">
-                        {% csrf_token %}
-                        <div class="form-group">
-                            <textarea class="form-control" name="content" rows="3" placeholder="What's happening?" maxlength="280" required></textarea>
+    <div class="container-fluid mt-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <h1>{{ page_title|default:"All Posts" }}</h1>
+                
+                {% if user.is_authenticated and page_title == "All Posts" %}
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">New Post</h5>
+                            <form action="{% url 'create_post' %}" method="post">
+                                {% csrf_token %}
+                                <div class="form-group">
+                                    <textarea class="form-control" name="content" rows="3" placeholder="What's happening?" maxlength="280" required></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Post</button>
+                            </form>
                         </div>
-                        <button type="submit" class="btn btn-primary">Post</button>
-                    </form>
-                </div>
+                    </div>
+                {% endif %}
+                
+                {% if page_obj %}
+                    {% for post in page_obj %}
+                        {% include "network/_post.html" with post=post %}
+                    {% empty %}
+                        <div class="alert alert-info">
+                            No posts yet.
+                        </div>
+                    {% endfor %}
+                    
+                    {% if page_obj.has_other_pages %}
+                        <nav aria-label="Posts pagination">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                                    </li>
+                                {% endif %}
+                                
+                                <li class="page-item active">
+                                    <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                                </li>
+                                
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    {% endif %}
+                {% endif %}
             </div>
-        {% endif %}
-        
-        {% if page_obj %}
-            {% for post in page_obj %}
-                {% include "network/_post.html" with post=post %}
-            {% empty %}
-                <div class="alert alert-info">
-                    No posts yet.
-                </div>
-            {% endfor %}
-            
-            {% if page_obj.has_other_pages %}
-                <nav aria-label="Posts pagination">
-                    <ul class="pagination justify-content-center">
-                        {% if page_obj.has_previous %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
-                            </li>
-                        {% endif %}
-                        
-                        <li class="page-item active">
-                            <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-                        </li>
-                        
-                        {% if page_obj.has_next %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
-                            </li>
-                        {% endif %}
-                    </ul>
-                </nav>
-            {% endif %}
-        {% endif %}
+        </div>
     </div>
 
     {% block javascript %}
