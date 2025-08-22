@@ -1,0 +1,71 @@
+.post-content {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.like-btn {
+    transition: all 0.2s ease;
+}
+
+.like-btn:hover {
+    transform: scale(1.05);
+}
+
+.follow-btn {
+    min-width: 100px;
+    transition: all 0.2s ease;
+}
+
+.card {
+    transition: box-shadow 0.2s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.edit-btn {
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.edit-btn:hover {
+    opacity: 1;
+}
+
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+
+.pagination {
+    margin-top: 2rem;
+}
+
+textarea {
+    resize: vertical;
+}
+
+.post-edit-form textarea {
+    min-height: 60px;
+}
+
+.container {
+    max-width: 800px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .container {
+        padding: 0 15px;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+}

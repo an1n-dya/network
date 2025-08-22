@@ -2,22 +2,28 @@
 
 {% block body %}
     <div class="container mt-4">
-        <h1>{{ page_title|default:"All Posts" }}</h1>
-        
-        {% if user.is_authenticated and page_title == "All Posts" %}
-            <div class="card mb-4">
-                <div class="card-body">
-                    <h5 class="card-title">New Post</h5>
-                    <form action="{% url 'create_post' %}" method="post">
-                        {% csrf_token %}
-                        <div class="form-group">
-                            <textarea class="form-control" name="content" rows="3" placeholder="What's happening?" maxlength="280" required></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Post</button>
-                    </form>
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-0">{{ profile_user.username }}</h2>
+                        <p class="text-muted mb-0">
+                            <strong>{{ follower_count }}</strong> followers • 
+                            <strong>{{ following_count }}</strong> following
+                        </p>
+                    </div>
+                    
+                    {% if user.is_authenticated and not is_own_profile %}
+                        <button class="btn follow-btn {% if is_following %}btn-outline-primary{% else %}btn-primary{% endif %}" 
+                                data-username="{{ profile_user.username }}">
+                            <span class="follow-text">{% if is_following %}Unfollow{% else %}Follow{% endif %}</span>
+                        </button>
+                    {% endif %}
                 </div>
             </div>
-        {% endif %}
+        </div>
+        
+        <h3>Posts by {{ profile_user.username }}</h3>
         
         {% if page_obj %}
             {% for post in page_obj %}
@@ -26,9 +32,7 @@
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
                                 <h6 class="card-title mb-1">
-                                    <a href="{% url 'profile' post.user.username %}" class="text-decoration-none">
-                                        <strong>{{ post.user.username }}</strong>
-                                    </a>
+                                    <strong>{{ post.user.username }}</strong>
                                 </h6>
                                 <small class="text-muted">{{ post.timestamp }}</small>
                             </div>
@@ -63,7 +67,7 @@
                 </div>
             {% empty %}
                 <div class="alert alert-info">
-                    No posts yet.
+                    This user hasn't posted anything yet.
                 </div>
             {% endfor %}
             
@@ -92,13 +96,42 @@
     </div>
 
     <script>
-        // Edit post functionality
         document.addEventListener('DOMContentLoaded', function() {
+            const followBtn = document.querySelector('.follow-btn');
             const editBtns = document.querySelectorAll('.edit-btn');
             const saveBtns = document.querySelectorAll('.save-btn');
             const cancelBtns = document.querySelectorAll('.cancel-btn');
             const likeBtns = document.querySelectorAll('.like-btn');
             
+            // Follow/Unfollow functionality
+            if (followBtn) {
+                followBtn.addEventListener('click', function() {
+                    const username = this.dataset.username;
+                    
+                    fetch(`/toggle_follow/${username}`, {
+                        method: 'POST',
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.is_following) {
+                            this.className = 'btn follow-btn btn-outline-primary';
+                            this.querySelector('.follow-text').textContent = 'Unfollow';
+                        } else {
+                            this.className = 'btn follow-btn btn-primary';
+                            this.querySelector('.follow-text').textContent = 'Follow';
+                        }
+                        
+                        // Update follower count
+                        const followerCount = document.querySelector('.text-muted');
+                        followerCount.innerHTML = `<strong>${data.follower_count}</strong> followers • <strong>{{ following_count }}</strong> following`;
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+                });
+            }
+            
+            // Edit post functionality (same as index.html)
             editBtns.forEach(btn => {
                 btn.addEventListener('click', function() {
                     const postId = this.dataset.postId;
