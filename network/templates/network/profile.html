@@ -1,5 +1,7 @@
 {% extends "network/layout.html" %}
 
+{% block title %}{{ profile_user.username }} - Social Network{% endblock %}
+
 {% block body %}
     <div class="container mt-4">
         <div class="card mb-4">
@@ -8,7 +10,7 @@
                     <div>
                         <h2 class="mb-0">{{ profile_user.username }}</h2>
                         <p class="text-muted mb-0">
-                            <strong>{{ follower_count }}</strong> followers • 
+                            <strong><span class="follower-count-value">{{ follower_count }}</span></strong> followers • 
                             <strong>{{ following_count }}</strong> following
                         </p>
                     </div>
@@ -27,44 +29,7 @@
         
         {% if page_obj %}
             {% for post in page_obj %}
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <h6 class="card-title mb-1">
-                                    <strong>{{ post.user.username }}</strong>
-                                </h6>
-                                <small class="text-muted">{{ post.timestamp }}</small>
-                            </div>
-                            {% if user == post.user %}
-                                <button class="btn btn-sm btn-outline-secondary edit-btn" data-post-id="{{ post.id }}">
-                                    Edit
-                                </button>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="post-content mt-2" id="post-content-{{ post.id }}">
-                            {{ post.content }}
-                        </div>
-                        
-                        <div class="post-edit-form" id="post-edit-{{ post.id }}" style="display: none;">
-                            <textarea class="form-control mb-2" id="edit-content-{{ post.id }}">{{ post.content }}</textarea>
-                            <button class="btn btn-sm btn-success save-btn" data-post-id="{{ post.id }}">Save</button>
-                            <button class="btn btn-sm btn-secondary cancel-btn" data-post-id="{{ post.id }}">Cancel</button>
-                        </div>
-                        
-                        <div class="mt-3">
-                            {% if user.is_authenticated %}
-                                <button class="btn btn-sm like-btn {% if user in post.likes.all %}btn-danger{% else %}btn-outline-danger{% endif %}" 
-                                        data-post-id="{{ post.id }}">
-                                    ❤️ <span class="like-count">{{ post.like_count }}</span>
-                                </button>
-                            {% else %}
-                                <span class="text-muted">❤️ {{ post.like_count }}</span>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
+                {% include "network/_post.html" with post=post %}
             {% empty %}
                 <div class="alert alert-info">
                     This user hasn't posted anything yet.
@@ -95,118 +60,7 @@
         {% endif %}
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const followBtn = document.querySelector('.follow-btn');
-            const editBtns = document.querySelectorAll('.edit-btn');
-            const saveBtns = document.querySelectorAll('.save-btn');
-            const cancelBtns = document.querySelectorAll('.cancel-btn');
-            const likeBtns = document.querySelectorAll('.like-btn');
-            
-            // Follow/Unfollow functionality
-            if (followBtn) {
-                followBtn.addEventListener('click', function() {
-                    const username = this.dataset.username;
-                    
-                    fetch(`/toggle_follow/${username}`, {
-                        method: 'POST',
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.is_following) {
-                            this.className = 'btn follow-btn btn-outline-primary';
-                            this.querySelector('.follow-text').textContent = 'Unfollow';
-                        } else {
-                            this.className = 'btn follow-btn btn-primary';
-                            this.querySelector('.follow-text').textContent = 'Follow';
-                        }
-                        
-                        // Update follower count
-                        const followerCount = document.querySelector('.text-muted');
-                        followerCount.innerHTML = `<strong>${data.follower_count}</strong> followers • <strong>{{ following_count }}</strong> following`;
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                    });
-                });
-            }
-            
-            // Edit post functionality (same as index.html)
-            editBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const postId = this.dataset.postId;
-                    document.getElementById(`post-content-${postId}`).style.display = 'none';
-                    document.getElementById(`post-edit-${postId}`).style.display = 'block';
-                    this.style.display = 'none';
-                });
-            });
-            
-            saveBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const postId = this.dataset.postId;
-                    const content = document.getElementById(`edit-content-${postId}`).value.trim();
-                    
-                    if (!content) {
-                        alert('Content cannot be empty');
-                        return;
-                    }
-                    
-                    fetch(`/edit_post/${postId}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ content: content })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            document.getElementById(`post-content-${postId}`).textContent = data.content;
-                            document.getElementById(`post-content-${postId}`).style.display = 'block';
-                            document.getElementById(`post-edit-${postId}`).style.display = 'none';
-                            document.querySelector(`.edit-btn[data-post-id="${postId}"]`).style.display = 'inline-block';
-                        } else {
-                            alert(data.error || 'Error updating post');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        alert('Error updating post');
-                    });
-                });
-            });
-            
-            cancelBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const postId = this.dataset.postId;
-                    document.getElementById(`post-content-${postId}`).style.display = 'block';
-                    document.getElementById(`post-edit-${postId}`).style.display = 'none';
-                    document.querySelector(`.edit-btn[data-post-id="${postId}"]`).style.display = 'inline-block';
-                });
-            });
-            
-            // Like/Unlike functionality
-            likeBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const postId = this.dataset.postId;
-                    
-                    fetch(`/toggle_like/${postId}`, {
-                        method: 'POST',
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.is_liked) {
-                            this.className = 'btn btn-sm like-btn btn-danger';
-                        } else {
-                            this.className = 'btn btn-sm like-btn btn-outline-danger';
-                        }
-                        this.querySelector('.like-count').textContent = data.like_count;
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                    });
-                });
-            });
-        });
-    </script>
+    {% block javascript %}
+    <script src="{% static 'network/main.js' %}"></script>
+{% endblock %}
 {% endblock %}

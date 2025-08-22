@@ -1,3 +1,5 @@
+import json
+
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
@@ -5,15 +7,15 @@ from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
-from django.views.decorators.csrf import csrf_exempt
-import json
 
 from .models import User, Post, Follow
 
+POSTS_PER_PAGE = 10
+
 
 def index(request):
-    posts = Post.objects.all()
-    paginator = Paginator(posts, 10)
+    posts = Post.objects.select_related("user").prefetch_related("likes")
+    paginator = Paginator(posts, POSTS_PER_PAGE)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
@@ -35,8 +37,8 @@ def create_post(request):
 
 def profile(request, username):
     profile_user = get_object_or_404(User, username=username)
-    posts = Post.objects.filter(user=profile_user)
-    paginator = Paginator(posts, 10)
+    posts = Post.objects.filter(user=profile_user).select_related("user").prefetch_related("likes")
+    paginator = Paginator(posts, POSTS_PER_PAGE)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
@@ -65,8 +67,8 @@ def profile(request, username):
 def following(request):
     # Get users that current user follows
     following_users = Follow.objects.filter(follower=request.user).values_list('following', flat=True)
-    posts = Post.objects.filter(user__in=following_users)
-    paginator = Paginator(posts, 10)
+    posts = Post.objects.filter(user__in=following_users).select_related("user").prefetch_related("likes")
+    paginator = Paginator(posts, POSTS_PER_PAGE)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
@@ -76,7 +78,6 @@ def following(request):
     })
 
 
-@csrf_exempt
 @login_required
 def toggle_follow(request, username):
     if request.method == "POST":
@@ -106,7 +107,6 @@ def toggle_follow(request, username):
     return JsonResponse({"error": "POST request required"}, status=400)
 
 
-@csrf_exempt
 @login_required
 def edit_post(request, post_id):
     if request.method == "POST":
@@ -128,7 +128,6 @@ def edit_post(request, post_id):
     return JsonResponse({"error": "POST request required"}, status=400)
 
 
-@csrf_exempt
 @login_required
 def toggle_like(request, post_id):
     if request.method == "POST":
